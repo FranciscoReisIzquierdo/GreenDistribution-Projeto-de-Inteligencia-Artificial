@@ -11,11 +11,11 @@
 :- style_check(-singleton).
 :- dynamic cliente/2.
 :- dynamic cliente/1.
-:- dynamic estafeta/2.
+:- dynamic estafeta/4.
 :- dynamic estafeta/1.
-:- dynamic encomenda/2.
+:- dynamic encomenda/8.
 :- dynamic encomenda/1.
-:- dynamic entrega/2.
+:- dynamic entrega/8.
 :- dynamic entrega/1.
 :- dynamic client_count/3.
 :- dynamic client_count/1.
@@ -36,7 +36,7 @@
 
 % Extensão do predicado cliente: Id, Nome -> {V,F}
 
-cliente(Id, Nome).
+% cliente(Id, Nome).
 
 cliente( 1, tropa).
 cliente( 2, bino).
@@ -63,7 +63,7 @@ cliente( 20, antonio).
 
 % Extensão do predicado encomenda: Id, Peso, Volume, Transporte, IdCliente, IdEstafeta, Preço, Prazo -> {V,F}
 
-encomenda(Id, Peso, Volume, Transporte, IdCliente, IdEstafeta, Preco, Prazo).
+% encomenda(Id, Peso, Volume, Transporte, IdCliente, IdEstafeta, Preco, Prazo).
 
 encomenda(1,4,10,bicicleta,1,1,100,1).
 encomenda(2,5,12,bicicleta,2,2,60,1).
@@ -91,7 +91,7 @@ encomenda(20,2,9,bicicleta,20,5,81,4).
 
 % Extensão do predicado entrega: IdEntrega, Rua, Freguesia, Data, IdEncomenda, Classificacao, Tempo, Distancia -> {V,F}
 
-entrega(IdEntrega, Rua, Freguesia, Data, IdEncomenda, Classificacao, Tempo, Distancia).
+% entrega(IdEntrega, Rua, Freguesia, Data, IdEncomenda, Classificacao, Tempo, Distancia).
 
 entrega(1, "Rua Travessa do Falcão", "Canelas", data(18, 11, 2021), 1, 3, 2,20).
 entrega(2, "Rua Gomes Ferreira", "Santo Tirso", data(7, 5, 2021), 2, 5, 1,10).
@@ -118,7 +118,7 @@ entrega(20, "Rua da Universidade", "Braga", data(26, 8, 2021), 20, 5, 1,14).
 
 % Extensão do predicado estafeta: Id, Nome, Classificacao, TotalEntregas -> {V,F}
 
-estafeta(Id, Nome, Classificacao, TotalEntregas).
+% estafeta(Id, Nome, Classificacao, TotalEntregas).
 
 estafeta( 1, duarte, 5.0, 20).
 estafeta( 2, esquerdo, 0.0, 15).
@@ -206,8 +206,8 @@ getAllEncomendas(Lista):- findall((Id, Peso, Volume, Transporte, IdCliente, IdEs
 % Extensão do predicado new_encomenda: Volume, Transporte, IdCliente, IdEstafeta, Preco, Prazo -> {V, F}
 
 encomenda_count(21).
-new_encomenda(Volume, Transporte, IdCliente, IdEstafeta, Preco, Prazo) :- encomenda_count(C),
-    asserta(encomenda(C, Volume, Transporte, IdCliente, IdEstafeta, Preco, Prazo)), retract(encomenda_count(C)), asserta(encomenda_count(C + 1)).
+new_encomenda(Peso, Volume, Transporte, IdCliente, IdEstafeta, Preco, Prazo) :- encomenda_count(C),
+    asserta(encomenda(C, Peso, Volume, Transporte, IdCliente, IdEstafeta, Preco, Prazo)), retract(encomenda_count(C)), asserta(encomenda_count(C + 1)).
 
 
 % Predicado que apaga uma encomenda
@@ -227,7 +227,7 @@ getAllEntregas(Lista):- findall((IdEntrega, Rua, Freguesia, Data, IdEncomenda, C
 
 entrega_count(21).
 new_entrega(Rua, Freguesia, Data, IdEncomenda, Classificacao, Tempo, Distancia) :- entrega_count(C),
-    asserta(entrega(C, Rua, Freguesia, IdEncomenda, Classificacao)), retract(entrega_count(C)), asserta(entrega_count(C + 1)).
+    asserta(entrega(C, Rua, Freguesia, Data, IdEncomenda, Classificacao, Tempo, Distancia)), retract(entrega_count(C)), asserta(entrega_count(C + 1)).
 
 
 % Predicado que apaga uma entrega
@@ -270,10 +270,6 @@ maior_ou_igual(N1, N2) :- N1 @>= N2.
 menor_ou_igual(N1, N2) :- N1 @=< N2.
 
 
-% Função que insere um estafeta à base de conhecimento:  nome, Inserir_Estafeta -> {V,F}
-
-inserir_estafeta( X,Y,Z,W ) :- assert(estafeta(X,Y,Z,W)).
-
 % -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 % Pergunta 1:
@@ -283,7 +279,7 @@ estafeta_ecologico(IdEstafeta) :- findall((IdEstafeta, Distancia, Trans),
     Lista),
     findEco(Lista, [], ResLista),
     sumRep(ResLista, [], ResResLista),
-    smallest(ResResLista, (0, 100000000), (IdEstafeta, Score)).
+    smallest(ResResLista, (0, 100000000), (IdEstafeta, Score)), !.
 
 smallest([], (TId, TM), (TId, TM)).
 smallest([(Id, M) | T], (TId, TM), R) :- M @< TM, smallest(T, (Id, M), R).
@@ -318,7 +314,7 @@ trans(bicicleta, 0).
 
 
 getEstafetas(IdCliente, [], []).
-getEstafetas(IdCliente, [IdEncomenda|Tail1], [estafeta(IdEstafeta, Nome, Classificacao)|Tail2]):- encomenda(IdEncomenda, _, _, _, IdCliente, IdEstafeta, _, _), estafeta(IdEstafeta, Nome, Classificacao), getEstafetas(IdCliente, Tail1, Tail2). 
+getEstafetas(IdCliente, [IdEncomenda|Tail1], [estafeta(IdEstafeta, Nome, Classificacao, TotalEntregas)|Tail2]):- encomenda(IdEncomenda, _, _, _, IdCliente, IdEstafeta, _, _), estafeta(IdEstafeta, Nome, Classificacao, TotalEntregas), getEstafetas(IdCliente, Tail1, Tail2). 
 
 % -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -362,21 +358,14 @@ somaPrecos([IdEntrega|Tail], Acum, Total):- entrega(IdEntrega, _, _, _, IdEncome
 
 % Pergunta 5: 
 
+% entrega(IdEntrega, Rua, Freguesia, Data, IdEncomenda, Classificacao, Tempo, Distancia).
 
 % Predicado que devolve as zonas (Freguesias e Ruas) com maior volume de entregas
 % Extensão do predicado maior_volume_order: Lista -> {V, F}
 
-maior_volume_order(L) :-
-	findall(Freg, entrega(_, _, Freg, _, _, _, _, _), Lista),
-	more_freq(Lista, [], L).
-
-
-% Predicado que devolve as zonas (Freguesias) com maior volume de entregas
-% Extensão do predicado maior_volume_freg: Lista -> {V, F}
-
 maior_volume_freg(L) :-
-	findall(Freg, entrega(_, _, Freg, _, _, _, -, _), Lista),
-	more_freq(Lista, [], [L | T]).
+	findall(Freg, entrega(_, _, Freg, _, _, _, _, _), Lista),
+	more_freq(Lista, [], L), !.
 
 
 % Predicado que devolve as zonas (Ruas) com maior volume de entregas
@@ -384,7 +373,7 @@ maior_volume_freg(L) :-
 
 maior_volume_rua(L) :-
 	findall(Rua, entrega(_, Rua, _, _, _, _, _, _), Lista),
-	more_freq(Lista, [], [L | T]).
+	more_freq(Lista, [], L), !.
 
 
 % Predicado que devolve uma lista de pares, no qual cada par é constituído por (Elemento, Quantidade)
@@ -399,6 +388,7 @@ more_freq([H | T], L, R) :- contar(H, [H | T], N), delete(H, T, [], NT), more_fr
 
 contar(H, [], 0).
 contar(H, [H | T], N) :- contar(H, T, G), N is G + 1.
+contar(H, [X | T], N) :- contar(H, T, N).
 
 
 % Predicado que remove todas aas ocorrências de um elemento de uma lista
